@@ -32,7 +32,7 @@ EXPORT_SYMBOL(rtw_debug_mask);
  * So, turning it off will take effect for all rtw88 devices before
  * there is a tough reason to maintain rtw_edcca_enabled by device.
  */
-bool rtw_edcca_enabled = true;
+bool rtw_edcca_enabled = false;
 
 module_param_named(disable_lps_deep, rtw_disable_lps_deep_mode, bool, 0644);
 module_param_named(support_bf, rtw_bf_support, bool, 0644);
@@ -101,29 +101,34 @@ static struct ieee80211_rate rtw_ratetable[] = {
 	{.bitrate = 360, .hw_value = 0x09,},
 	{.bitrate = 480, .hw_value = 0x0a,},
 	{.bitrate = 540, .hw_value = 0x0b,},
+	{.bitrate = 7200, .hw_value = 0x1b,}, // Add VHT rates if missing
 };
 
 static const struct ieee80211_iface_limit rtw_iface_limits[] = {
-	{
-		.max = 1,
-		.types = BIT(NL80211_IFTYPE_STATION),
-	},
-	{
-		.max = 1,
-		.types = BIT(NL80211_IFTYPE_AP) |
-                        BIT(NL80211_IFTYPE_P2P_CLIENT) |
-                        BIT(NL80211_IFTYPE_P2P_GO)
-	}
+    {
+        .max = 2, // 2 Station interfaces
+        .types = BIT(NL80211_IFTYPE_STATION),
+    },
+    {
+        .max = 4, // 4 AP interfaces
+        .types = BIT(NL80211_IFTYPE_AP),
+    },
+    {
+        .max = 2, // 2 P2P interfaces
+        .types = BIT(NL80211_IFTYPE_P2P_CLIENT) |
+                 BIT(NL80211_IFTYPE_P2P_GO),
+    }
 };
 
 static const struct ieee80211_iface_combination rtw_iface_combs[] = {
-	{
-		.limits = rtw_iface_limits,
-		.n_limits = ARRAY_SIZE(rtw_iface_limits),
-		.max_interfaces = 2,
-		.num_different_channels = 1,
-	}
+    {
+        .limits = rtw_iface_limits,
+        .n_limits = ARRAY_SIZE(rtw_iface_limits),
+        .max_interfaces = 8, // Allow 8 interfaces in total
+        .num_different_channels = 1, // Single channel (or set to 2 for multi-channel)
+    }
 };
+
 
 u16 rtw_desc_to_bitrate(u8 desc_rate)
 {
@@ -1016,35 +1021,32 @@ static void rtw_hw_config_rf_ant_num(struct rtw_dev *rtwdev, u8 hw_ant_num)
 
 static u64 get_vht_ra_mask(struct ieee80211_sta *sta)
 {
-	u64 ra_mask = 0;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
-	u16 mcs_map = le16_to_cpu(sta->deflink.vht_cap.vht_mcs.rx_mcs_map);
-#else
-	u16 mcs_map = le16_to_cpu(sta->vht_cap.vht_mcs.rx_mcs_map);
-#endif
-	u8 vht_mcs_cap;
-	int i, nss;
+    u64 ra_mask = 0;
+    u16 mcs_map = le16_to_cpu(sta->deflink.vht_cap.vht_mcs.rx_mcs_map);
+    int i, nss;
 
-	/* 4SS, every two bits for MCS7/8/9 */
-	for (i = 0, nss = 12; i < 4; i++, mcs_map >>= 2, nss += 10) {
-		vht_mcs_cap = mcs_map & 0x3;
-		switch (vht_mcs_cap) {
-		case 2: /* MCS9 */
-			ra_mask |= 0x3ffULL << nss;
-			break;
-		case 1: /* MCS8 */
-			ra_mask |= 0x1ffULL << nss;
-			break;
-		case 0: /* MCS7 */
-			ra_mask |= 0x0ffULL << nss;
-			break;
-		default:
-			break;
-		}
-	}
+    for (i = 0, nss = 12; i < 4; i++, mcs_map >>= 2, nss += 10) {
+        switch (mcs_map & 0x3) {
+        case 2: /* MCS9 */
+            ra_mask |= 0x3FFULL << nss;
+            break;
+        case 1: /* MCS8 */
+            ra_mask |= 0x1FFULL << nss;
+            break;
+        case 0: /* MCS7 */
+            ra_mask |= 0x0FFULL << nss;
+            break;
+        default:
+            break;
+        }
+    }
 
-	return ra_mask;
+    pr_debug("VHT RA Mask: 0x%llx\n", ra_mask);
+
+    return ra_mask;
 }
+
+
 
 static u8 get_rate_id(u8 wireless_set, enum rtw_bandwidth bw_mode, u8 tx_num)
 {
@@ -1127,26 +1129,47 @@ static u8 get_rate_id(u8 wireless_set, enum rtw_bandwidth bw_mode, u8 tx_num)
 	return rate_id;
 }
 
-#define RA_MASK_CCK_RATES	0x0000f
-#define RA_MASK_OFDM_RATES	0x00ff0
-#define RA_MASK_HT_RATES_1SS	(0xff000ULL << 0)
-#define RA_MASK_HT_RATES_2SS	(0xff000ULL << 8)
-#define RA_MASK_HT_RATES_3SS	(0xff000ULL << 16)
-#define RA_MASK_HT_RATES	(RA_MASK_HT_RATES_1SS | \
-				 RA_MASK_HT_RATES_2SS | \
-				 RA_MASK_HT_RATES_3SS)
-#define RA_MASK_VHT_RATES_1SS	(0x3ff000ULL << 0)
-#define RA_MASK_VHT_RATES_2SS	(0x3ff000ULL << 10)
-#define RA_MASK_VHT_RATES_3SS	(0x3ff000ULL << 20)
-#define RA_MASK_VHT_RATES	(RA_MASK_VHT_RATES_1SS | \
-				 RA_MASK_VHT_RATES_2SS | \
-				 RA_MASK_VHT_RATES_3SS)
-#define RA_MASK_CCK_IN_BG	0x00005
-#define RA_MASK_CCK_IN_HT	0x00005
-#define RA_MASK_CCK_IN_VHT	0x00005
-#define RA_MASK_OFDM_IN_VHT	0x00010
-#define RA_MASK_OFDM_IN_HT_2G	0x00010
-#define RA_MASK_OFDM_IN_HT_5G	0x00030
+
+
+#define MAX_SPATIAL_STREAMS 4
+#define ENABLE_RADIOTAP_HEADERS 1
+#define RTW_TX_QUEUE_SIZE 2048
+#define MAX_TX_ANTENNAS 0xF // 4 antennas
+#define MAX_RX_ANTENNAS 0xF // 4 antennas
+
+
+
+
+#define RA_MASK_CCK_RATES        0x0000f  // All CCK rates
+#define RA_MASK_OFDM_RATES       0x00ff0  // All OFDM rates
+
+// HT Rates for 1SS–4SS
+#define RA_MASK_HT_RATES_1SS     (0xff000ULL << 0)   // MCS0–MCS15 for 1SS
+#define RA_MASK_HT_RATES_2SS     (0xff000ULL << 8)   // MCS0–MCS15 for 2SS
+#define RA_MASK_HT_RATES_3SS     (0xff000ULL << 16)  // MCS0–MCS15 for 3SS
+#define RA_MASK_HT_RATES_4SS     (0xff000ULL << 24)  // MCS0–MCS15 for 4SS
+#define RA_MASK_HT_RATES         (RA_MASK_HT_RATES_1SS | \
+                                  RA_MASK_HT_RATES_2SS | \
+                                  RA_MASK_HT_RATES_3SS | \
+                                  RA_MASK_HT_RATES_4SS)
+
+// VHT Rates for 1SS–4SS
+#define RA_MASK_VHT_RATES_1SS    (0x3ff000ULL << 0)  // MCS0–MCS9 for 1SS
+#define RA_MASK_VHT_RATES_2SS    (0x3ff000ULL << 10) // MCS0–MCS9 for 2SS
+#define RA_MASK_VHT_RATES_3SS    (0x3ff000ULL << 20) // MCS0–MCS9 for 3SS
+#define RA_MASK_VHT_RATES_4SS    (0x3ff000ULL << 30) // MCS0–MCS9 for 4SS
+#define RA_MASK_VHT_RATES        (RA_MASK_VHT_RATES_1SS | \
+                                  RA_MASK_VHT_RATES_2SS | \
+                                  RA_MASK_VHT_RATES_3SS | \
+                                  RA_MASK_VHT_RATES_4SS)
+
+// CCK and OFDM Compatibility
+#define RA_MASK_CCK_IN_BG        0x00005  // Basic CCK rates in BG mode
+#define RA_MASK_CCK_IN_HT        0x00005  // Basic CCK rates in HT mode
+#define RA_MASK_CCK_IN_VHT       0x00005  // Basic CCK rates in VHT mode
+#define RA_MASK_OFDM_IN_VHT      0x00010  // OFDM rates in VHT mode
+#define RA_MASK_OFDM_IN_HT_2G    0x00010  // OFDM rates in HT mode (2.4 GHz)
+#define RA_MASK_OFDM_IN_HT_5G    0x00030  // OFDM rates in HT mode (5 GHz)
 
 static u64 rtw_rate_mask_rssi(struct rtw_sta_info *si, u8 wireless_set)
 {
@@ -2690,7 +2713,7 @@ void rtw_set_ampdu_factor(struct rtw_dev *rtwdev, struct ieee80211_vif *vif,
 	if (factor != 0xff)
 		ops->set_ampdu_factor(rtwdev, factor);
 }
-
+//pr_debug("RA_MASK_HT_RATES: 0x%llx\n", RA_MASK_HT_RATES);
 MODULE_AUTHOR("Realtek Corporation");
 MODULE_DESCRIPTION("Realtek 802.11ac wireless core module");
 MODULE_LICENSE("Dual BSD/GPL");
