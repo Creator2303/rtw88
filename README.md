@@ -1,3 +1,9 @@
+I did make some small changes tweaks for the Realtek RTL8814au as this is the most promising code.
+
+Thank you iwfinger :)
+
+
+
 # rtw88 downstream 🐧
 ### This is a downstream repo with a primary purpose of supporting development, testing and maintenance for the Realtek rtw88 series of WiFi 5 drivers in the Linux kernel.
 
