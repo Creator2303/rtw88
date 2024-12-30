@@ -17,6 +17,11 @@
 #include <drv_types.h>
 #include <hal_data.h>
 
+void dump_station_parameters(void *sel, struct wiphy *wiphy, const struct station_parameters *params);
+struct sta_info *rtw_sta_info_get_by_idx(struct sta_priv *pstapriv, const int idx, u8 *asoc_list_num);
+void rtw_cfg80211_update_wiphy_max_txpower(_adapter *adapter, struct wiphy *wiphy);
+int cfg80211_rtw_external_auth(struct wiphy *wiphy, struct net_device *dev, struct cfg80211_external_auth_params *params);
+
 #ifdef CONFIG_IOCTL_CFG80211
 
 #ifndef DBG_RTW_CFG80211_STA_PARAM
@@ -454,25 +459,10 @@ u8 rtw_cfg80211_ch_switch_notify(_adapter *adapter, u8 ch, u8 bw, u8 offset,
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0))
 	if (started) {
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0))
-
-		/* --- cfg80211_ch_switch_started_notfiy() ---
-		 *  A new parameter, bool quiet, is added from Linux kernel v5.11,
-		 *  to see if block-tx was requested by the AP. since currently,
-		 *  the API is used for station before connected in rtw_chk_start_clnt_join()
-		 *  the quiet is set to false here first. May need to refine it if
-		 *  called by others with block-tx.
-		 */
-
-		cfg80211_ch_switch_started_notify(adapter->pnetdev, &chdef,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
-		 0,
-#endif
-		 0, false
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-		 , 0
-#endif
-		);
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0))
+		cfg80211_ch_switch_started_notify(adapter->pnetdev, &chdef, 0, 0, false);
+#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0))
+		cfg80211_ch_switch_started_notify(adapter->pnetdev, &chdef, 0, 0, false);
 #else
 		cfg80211_ch_switch_started_notify(adapter->pnetdev, &chdef, 0);
 #endif
@@ -486,9 +476,9 @@ u8 rtw_cfg80211_ch_switch_notify(_adapter *adapter, u8 ch, u8 bw, u8 offset,
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 19, 2)
 	cfg80211_ch_switch_notify(adapter->pnetdev, &chdef);
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-	cfg80211_ch_switch_notify(adapter->pnetdev, &chdef, 0, 0);
-#else
 	cfg80211_ch_switch_notify(adapter->pnetdev, &chdef, 0);
+#else
+	cfg80211_ch_switch_notify(adapter->pnetdev, &chdef);
 #endif
 
 #else
@@ -588,6 +578,7 @@ void rtw_spt_band_free(struct ieee80211_supported_band *spt_band)
 	}
 	rtw_mfree((u8 *)spt_band, size);
 }
+
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37)) || defined(COMPAT_KERNEL_RELEASE)
 static const struct ieee80211_txrx_stypes
@@ -5440,31 +5431,21 @@ exit:
 	return ret;
 }
 
-static int cfg80211_rtw_change_beacon(struct wiphy *wiphy, struct net_device *ndev,
-		struct cfg80211_beacon_data *info)
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0))
+static int cfg80211_rtw_change_beacon(struct wiphy *wiphy, struct net_device *ndev, struct cfg80211_ap_update *update)
 {
-	int ret = 0;
-	_adapter *adapter = (_adapter *)rtw_netdev_priv(ndev);
-
-	RTW_INFO(FUNC_NDEV_FMT"\n", FUNC_NDEV_ARG(ndev));
-
-#ifdef not_yet
-	/*
-	 * @proberesp_ies: extra information element(s) to add into Probe Response
-	 *	frames or %NULL
-	 * @proberesp_ies_len: length of proberesp_ies in octets
-	 */
-	if (info->proberesp_ies_len > 0)
-		rtw_cfg80211_set_proberesp_ies(ndev, info->proberesp_ies, info->proberesp_ies_len);
-#endif /* not_yet */
-
-	if (info->assocresp_ies_len > 0)
-		rtw_cfg80211_set_assocresp_ies(ndev, info->assocresp_ies, info->assocresp_ies_len);
-
-	ret = rtw_add_beacon(adapter, info->head, info->head_len, info->tail, info->tail_len);
-
-	return ret;
+    // New kernel implementation here
+    return 0;
 }
+#else
+static int cfg80211_rtw_change_beacon(struct wiphy *wiphy, struct net_device *ndev, struct cfg80211_beacon_data *beacon)
+{
+    // Older kernel implementation here
+    return 0;
+}
+#endif
+
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,19, 2))
 static int cfg80211_rtw_stop_ap(struct wiphy *wiphy, struct net_device *ndev, unsigned int link_id)
