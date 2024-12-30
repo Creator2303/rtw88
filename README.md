@@ -1,7 +1,7 @@
 I did make some small changes tweaks for the Realtek RTL8814au as it is the most promising code.
 Some small changes for being compiled in kernel 6.11.2 , in the folder alt_rtl8821ce/os_dep/linux/ioctl_cfg80211.c and os_intfs.c 
 It compiles just fine in kernel 6.11.2
-The rtl8814au it doesn`t recognise all the antennas, the original iwfinger`s driver, the iw phy was showing 0x3 with some changes 
+The rtl8814au it doesn`t recognise all the antennas, the original lwfinger`s driver, the iw phy was showing 0x3 with some changes 
 i was able to make this 0x7 (which means 3 antennas)but my intention was to be 4 antennas :(
 "Available Antennas: TX 0x7 RX 0x7"
 "Configured Antennas: TX 0x7 RX 0x7"
@@ -14,7 +14,7 @@ HT Max RX data rate: 300 Mbps
 VHT TX highest supported: 780 Mbps
 VHT extended NSS: not supported
 
-Thank you iwfinger :)
+Thank you lwfinger :)
 
 _________________________________________________________________________________________________________________________________________________________________________________
 
