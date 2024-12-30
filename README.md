@@ -1,4 +1,4 @@
-I did make some small changes tweaks for the Realtek RTL8814au as it is the most promising code.
+**I did make some small changes tweaks for the Realtek RTL8814au as it is the most promising code.
 Some small changes for being compiled in kernel 6.11.2 , in the folder alt_rtl8821ce/os_dep/linux/ioctl_cfg80211.c and os_intfs.c 
 It compiles just fine in kernel 6.11.2.
 
@@ -15,7 +15,7 @@ HT Max RX data rate: 300 Mbps
 VHT TX highest supported: 780 Mbps
 VHT extended NSS: not supported
 
-Thank you lwfinger :)
+Thank you lwfinger :)**
 
 _________________________________________________________________________________________________________________________________________________________________________________
 
