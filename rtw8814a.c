@@ -97,11 +97,11 @@ static void rtw8814a_read_rf_type(struct rtw_dev *rtwdev,
 	hal->rf_phy_num = 4;
 
 	if (hal->rf_type == RF_3T3R) {
+		hal->antenna_rx = BB_PATH_ABCD;
+		hal->antenna_tx = BB_PATH_ABCD;
+	} else {
 		hal->antenna_rx = BB_PATH_ABC;
 		hal->antenna_tx = BB_PATH_ABC;
-	} else {
-		hal->antenna_rx = BB_PATH_AB;
-		hal->antenna_tx = BB_PATH_AB;
 	}
 }
 

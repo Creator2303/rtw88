@@ -1,23 +1,3 @@
-*I did make some small changes tweaks for the Realtek RTL8814au as it is the most promising code.
-* Some small changes for being compiled in kernel 6.11.2 , in the folder alt_rtl8821ce/os_dep/linux/ioctl_cfg80211.c and os_intfs.c 
-*It compiles just fine in kernel 6.11.2.
-* The rtl8814au it does not recognise all the antennas, the original lwfinger`s driver, the iw phy was showing 0x3.
-*I was able to make this 0x7 (which means 3 antennas)but my intention was to be 4 antennas :(
-"Available Antennas: TX 0x7 RX 0x7"
-"Configured Antennas: TX 0x7 RX 0x7"
-* The interface combination limits are changed from 2 to 8:
-   "valid interface combinations:
-                 * #{ managed } <= 2, #{ AP } <= 4, #{ P2P-client, P2P-GO } <= 2,
-                   total <= 8, #channels <= 1 "
-It needs a lot of work because: 
-HT Max RX data rate: 300 Mbps
-VHT TX highest supported: 780 Mbps
-VHT extended NSS: not supported
-
-Thank you lwfinger :)
-
-_________________________________________________________________________________________________________________________________________________________________________________
-
 # rtw88 downstream 🐧
 ### This is a downstream repo with a primary purpose of supporting development, testing and maintenance for the Realtek rtw88 series of WiFi 5 drivers in the Linux kernel.
 

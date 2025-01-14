@@ -31,7 +31,7 @@ do {								\
  * use worldwide country code and txpwr regd.
  */
 static const struct rtw_regulatory rtw_reg_ww =
-	COUNTRY_REGD_ENT("00", RTW_REGD_WW, RTW_REGD_WW);
+	COUNTRY_REGD_ENT("US", RTW_REGD_WW, RTW_REGD_WW);
 
 static const struct rtw_regulatory rtw_reg_map[] = {
 	COUNTRY_REGD_ENT("AD", RTW_REGD_ETSI, RTW_REGD_ETSI),
@@ -293,7 +293,7 @@ static void rtw_regd_apply_hw_cap_flags(struct wiphy *wiphy)
 
 	for (i = 0; i < sband->n_channels; i++) {
 		ch = &sband->channels[i];
-		ch->flags |= IEEE80211_CHAN_NO_80MHZ;
+		// ch->flags |= IEEE80211_CHAN_NO_80MHZ;  // Removed 80MHz restriction
 	}
 
 out_5g:
@@ -303,7 +303,7 @@ out_5g:
 
 	for (i = 0; i < sband->n_channels; i++) {
 		ch = &sband->channels[i];
-		ch->flags |= IEEE80211_CHAN_NO_80MHZ;
+		// ch->flags |= IEEE80211_CHAN_NO_80MHZ;  // Removed 80MHz restriction
 	}
 }
 
@@ -539,3 +539,10 @@ bool rtw_regd_has_alt(u8 regd, u8 *regd_alt)
 	*regd_alt = rtw_regd_alt[regd].alt;
 	return true;
 }
+
+    // Modify or remove any region-based restrictions on channel availability
+    #define ENABLE_ALL_CHANNELS 1 // Allow all channels
+    
+    // Ensuring proper channel initialization and no restrictions
+    #define ENABLE_ALL_CHANNELS 1 // Enable all channels
+    

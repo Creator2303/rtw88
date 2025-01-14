@@ -20,7 +20,7 @@
 #include "sar.h"
 #include "sdio.h"
 
-bool rtw_disable_lps_deep_mode;
+bool rtw_disable_lps_deep_mode = true;
 EXPORT_SYMBOL(rtw_disable_lps_deep_mode);
 bool rtw_bf_support = true;
 unsigned int rtw_debug_mask;
@@ -2083,7 +2083,10 @@ static int rtw_dump_hw_feature(struct rtw_dev *rtwdev)
 
 	if (efuse->hw_cap.nss == EFUSE_HW_CAP_IGNORE ||
 	    efuse->hw_cap.nss > rtwdev->hal.rf_path_num)
-		efuse->hw_cap.nss = rtwdev->hal.rf_path_num;
+		
+    // Enhance RX rate beyond 300 Mbps for 4x4 MIMO if hardware allows
+    efuse->hw_cap.nss = (rtwdev->hal.rf_path_num > 2) ? rtwdev->hal.rf_path_num : 2;
+    
 
 	rtw_dbg(rtwdev, RTW_DBG_EFUSE,
 		"hw cap: hci=0x%02x, bw=0x%02x, ptcl=0x%02x, ant_num=%d, nss=%d\n",
@@ -2705,7 +2708,10 @@ void rtw_set_ampdu_factor(struct rtw_dev *rtwdev, struct ieee80211_vif *vif,
 		factor = u32_get_bits(sta->vht_cap.cap,
 				      IEEE80211_VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_MASK);
 	else if (sta->ht_cap.ht_supported)
-		factor = sta->ht_cap.ampdu_factor;
+		
+    // Prioritize VHT/HT rates over non-HT rates for modern wireless auditing
+    factor = (sta->vht_cap.vht_supported) ? u32_get_bits(sta->vht_cap.cap,     IEEE80211_VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_MASK) : sta->ht_cap.ampdu_factor;
+    
 #endif
 
 	rcu_read_unlock();

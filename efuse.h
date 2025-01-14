@@ -27,3 +27,8 @@ int rtw_parse_efuse_map(struct rtw_dev *rtwdev);
 int rtw_read8_physical_efuse(struct rtw_dev *rtwdev, u16 addr, u8 *data);
 
 #endif
+
+
+// Macro to extract NSS from efuse hardware capabilities
+#define GET_EFUSE_HW_CAP_NSS(hw_cap)     le32_get_bits(*((__le32 *)(hw_cap) + 0x01), GENMASK(20, 19))
+

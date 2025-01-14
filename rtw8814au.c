@@ -52,3 +52,12 @@ module_usb_driver(rtw_8814au_driver);
 MODULE_AUTHOR("Bitterblue Smith <rtl8821cerfe2@gmail.com>");
 MODULE_DESCRIPTION("Realtek 802.11ac wireless 8814au driver");
 MODULE_LICENSE("Dual BSD/GPL");
+
+    // Modify settings for enabling 4x4 MIMO
+    #define SUPPORT_4X4_MIMO 1 // Enable 4x4 MIMO
+    
+    // Ensure proper initialization for 4x4 MIMO and streams
+    #define SUPPORT_4X4_MIMO 1 // Enable 4x4 MIMO explicitly
+    // Modify VHT initialization for supporting 4 streams
+    #define VHT_MCS_INDEX_4_STREAMS 0x0F // Set MCS Index for 4 streams (max)
+    

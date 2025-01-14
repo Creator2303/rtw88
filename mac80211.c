@@ -98,7 +98,7 @@ static int rtw_ops_config(struct ieee80211_hw *hw, u32 changed)
 		}
 	}
 
-	if (changed & IEEE80211_CONF_CHANGE_CHANNEL)
+	// if (changed & IEEE80211_CONF_CHANGE_CHANNEL)  // Removed dynamic channel restriction
 		rtw_set_channel(rtwdev);
 
 	if ((changed & IEEE80211_CONF_CHANGE_IDLE) &&

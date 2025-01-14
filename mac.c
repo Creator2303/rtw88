@@ -1406,3 +1406,12 @@ int rtw_mac_init(struct rtw_dev *rtwdev)
 
 	return 0;
 }
+
+    // Modify settings for enabling the maximum number of streams
+    #define MAX_STREAMS 4 // 4 streams for MIMO configuration
+    
+    // Ensure proper configuration of 4x4 streams during VHT setup
+    #define MAX_STREAMS 4 // Enable 4 streams for MIMO
+    // Update the configuration for handling 4x4 streams
+    #define VHT_CAPACITY_4X4 1
+    

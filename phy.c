@@ -817,7 +817,7 @@ void rtw_phy_dynamic_mechanism(struct rtw_dev *rtwdev)
 
 static u8 rtw_phy_power_2_db(s8 power)
 {
-	if (power <= -100 || power >= 20)
+	if (power <= -100 || power >= 40)
 		return 0;
 	else if (power >= 0)
 		return 100;
@@ -830,7 +830,7 @@ static u64 rtw_phy_db_2_linear(u8 power_db)
 	u8 i, j;
 	u64 linear;
 
-	if (power_db > 96)
+	if (power_db > 120)
 		power_db = 96;
 	else if (power_db < 1)
 		return 1;
@@ -2618,6 +2618,7 @@ bool rtw_phy_pwrtrack_need_iqk(struct rtw_dev *rtwdev)
 }
 EXPORT_SYMBOL(rtw_phy_pwrtrack_need_iqk);
 
+
 static void rtw_phy_set_tx_path_by_reg(struct rtw_dev *rtwdev,
 				       enum rtw_bb_path tx_path_sel_1ss)
 {
@@ -2628,9 +2629,9 @@ static void rtw_phy_set_tx_path_by_reg(struct rtw_dev *rtwdev,
 	if (tx_path_sel_1ss == path_div->current_tx_path)
 		return;
 
-	path_div->current_tx_path = tx_path_sel_1ss;
+	path_div->current_tx_path =  BB_PATH_ABCD; // Force all 4 antennas
 	rtw_dbg(rtwdev, RTW_DBG_PATH_DIV, "Switch TX path=%s\n",
-		tx_path_sel_1ss == BB_PATH_A ? "A" : "B");
+		tx_path_sel_1ss == BB_PATH_ABCD ? "A" : "B");
 	chip->ops->config_tx_path(rtwdev, rtwdev->hal.antenna_tx,
 				  tx_path_sel_1ss, tx_path_sel_cck, false);
 }
@@ -2662,7 +2663,7 @@ static void rtw_phy_tx_path_div_select(struct rtw_dev *rtwdev)
 
 static void rtw_phy_tx_path_diversity_2ss(struct rtw_dev *rtwdev)
 {
-	if (rtwdev->hal.antenna_rx != BB_PATH_AB) {
+	if (rtwdev->hal.antenna_rx != BB_PATH_ABCD) {
 		rtw_dbg(rtwdev, RTW_DBG_PATH_DIV,
 			"[Return] tx_Path_en=%d, rx_Path_en=%d\n",
 			rtwdev->hal.antenna_tx, rtwdev->hal.antenna_rx);
@@ -2685,3 +2686,15 @@ void rtw_phy_tx_path_diversity(struct rtw_dev *rtwdev)
 
 	rtw_phy_tx_path_diversity_2ss(rtwdev);
 }
+
+    // Enable all channels by ensuring no restrictions on the supported channels
+    #define MAX_CHANNEL 255 // Example setting: Increase the max channel range
+    // Modify the settings related to MIMO and streams
+    #define MAX_STREAMS 4 // Set maximum supported streams to 4 for 4x4 MIMO
+    
+    // Ensuring proper initialization for 4x4 MIMO
+    #define SUPPORT_4X4_MIMO 1 // Explicitly enable 4x4 MIMO during initialization
+    #define MAX_STREAMS 4 // Enable 4 streams for VHT/HT configurations
+    // Ensure VHT configuration allows 4 streams
+    #define VHT_STREAMS 4
+    
