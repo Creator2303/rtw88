@@ -677,12 +677,20 @@ static void rtw_sdio_enable_rx_aggregation(struct rtw_dev *rtwdev)
 {
 	u8 size, timeout;
 
-	if (rtw_chip_wcpu_11n(rtwdev)) {
+	switch (rtwdev->chip->id) {
+	case RTW_CHIP_TYPE_8703B:
 		size = 0x6;
 		timeout = 0x6;
-	} else {
+		break;
+	case RTW_CHIP_TYPE_8723D:
+		size = 0xa;
+		timeout = 0x3;
+		rtw_write8_set(rtwdev, REG_RXDMA_AGG_PG_TH + 3, BIT(7));
+		break;
+	default:
 		size = 0xff;
 		timeout = 0x1;
+		break;
 	}
 
 	/* Make the firmware honor the size limit configured below */
@@ -1191,6 +1199,8 @@ static void rtw_sdio_indicate_tx_status(struct rtw_dev *rtwdev,
 	struct rtw_sdio_tx_data *tx_data = rtw_sdio_get_tx_data(skb);
 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
 	struct ieee80211_hw *hw = rtwdev->hw;
+
+	skb_pull(skb, rtwdev->chip->tx_pkt_desc_sz);
 
 	/* enqueue to wait for tx report */
 	if (info->flags & IEEE80211_TX_CTL_REQ_TX_STATUS) {
